@@ -5,28 +5,28 @@
 ### before start
 1. detectron2 설치
 
-[m1 설치 방법](https://velog.io/@huttzza/m1-detectron2-%EC%84%A4%EC%B9%98)
+    [m1 설치 방법](https://velog.io/@huttzza/m1-detectron2-%EC%84%A4%EC%B9%98)
 
 2. flask 설치
 
-```
-pip install flask
-pip install flask-cors
-```
+    ```
+    pip install flask
+    pip install flask-cors
+    ```
 
 ### run
 1. set constant.py
-```
-PI_IP = rasberry pi ip
-CFG_FILE = local cfg path
-```
-(set `static` folder too)
+    ```
+    PI_IP = rasberry pi ip
+    CFG_FILE = local cfg path
+    ```
+    (set `static` folder too)
 
 2. run
 
-```
-sudo python3 main.py
-```
+    ```
+    sudo python3 main.py
+    ```
 
 ### for detect
 to local host (POST)
