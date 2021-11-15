@@ -53,7 +53,7 @@ def get_pklot():
     print("parking lot image get from pi-camera")
 
     # get pklot image from pi camera every 5 seconds
-    threading.Timer(5, get_pklot).start()
+    threading.Timer(30, get_pklot).start()
 
 
 app = Flask(__name__)
@@ -91,4 +91,4 @@ def show_pklot():
 
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=4000, debug=True)
+    app.run(host="0.0.0.0", port=80, debug=True)
