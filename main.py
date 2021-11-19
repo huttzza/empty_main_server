@@ -7,6 +7,7 @@ from werkzeug.wrappers import response
 from detectron2.engine import DefaultPredictor
 from detectron2.config import get_cfg
 from detectron2.data import MetadataCatalog
+from detectron2.utils.visualizer import Visualizer
 import shutil
 import cv2
 import requests
@@ -29,7 +30,7 @@ def score_image(predictor: DefaultPredictor, image_url: str, mode: str):
     image = cv2.imdecode(image_as_np_array, cv2.IMREAD_COLOR)
 
     # make prediction
-    return predictor(image)
+    return image, predictor(image)
 
 
 def prepare_pridctor():
@@ -43,7 +44,7 @@ def prepare_pridctor():
     classes = MetadataCatalog.get(cfg.DATASETS.TRAIN[0]).thing_classes
     predictor = DefaultPredictor(cfg)
     print("Predictor has been initialized.")
-    return (predictor, classes)
+    return (predictor, classes, cfg)
 
 
 def get_pklot():
@@ -58,7 +59,7 @@ def get_pklot():
 
 app = Flask(__name__)
 CORS(app)
-predictor, classes = prepare_pridctor()
+predictor, classes, cfg = prepare_pridctor()
 get_pklot()
 
 
@@ -66,20 +67,24 @@ get_pklot()
 def process_score_image_request():
     image_url = request.json["imageUrl"]
     mode = request.json["mode"]
-    scoring_result = score_image(predictor, image_url, mode)
+    im, scoring_result = score_image(predictor, image_url, mode)
 
     instances = scoring_result["instances"]
     scores = instances.get_fields()["scores"].tolist()
     pred_classes = instances.get_fields()["pred_classes"].tolist()
     pred_boxes = instances.get_fields()["pred_boxes"].tensor.tolist()
     pred_class_name = [classes[i] for i in pred_classes]
+    
+    v = Visualizer(im[:,:,::-1], MetadataCatalog.get(cfg.DATASETS.TRAIN[0]), scale=1.2)
+    out = v.draw_instance_predictions(instances.to("cpu"))
+    cv2.imwrite('static/detect.jpg',out.get_image()[:, :, ::-1])
 
     response = {
         "scores": scores,
         "pred_classes": pred_classes,
         "pred_class_name": pred_class_name,
         "pred_boxes": pred_boxes,
-        "classes": classes
+        #"classes": classes
     }
 
     return jsonify(response)
@@ -87,7 +92,7 @@ def process_score_image_request():
 
 @app.route("/images")
 def show_pklot():
-    return "<img src='static/parking_lot.jpg'>"
+    return "<img src='static/parking_lot.jpg'> <br> <img src='static/detect.jpg'>"
 
 
 if __name__ == '__main__':
