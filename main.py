@@ -2,7 +2,7 @@
 
 from flask import Flask
 from flask_cors import CORS
-from flask import request, jsonify, abort
+from flask import request, jsonify, abort, Response
 from werkzeug.wrappers import response
 from detectron2.engine import DefaultPredictor
 from detectron2.config import get_cfg
@@ -13,6 +13,7 @@ import cv2
 import requests
 import numpy as np
 import threading
+import json
 from constant import CFG_FILE, PI_IP
 
 
@@ -74,20 +75,29 @@ def process_score_image_request():
     pred_classes = instances.get_fields()["pred_classes"].tolist()
     pred_boxes = instances.get_fields()["pred_boxes"].tensor.tolist()
     pred_class_name = [classes[i] for i in pred_classes]
-    
-    v = Visualizer(im[:,:,::-1], MetadataCatalog.get(cfg.DATASETS.TRAIN[0]), scale=1.2)
+
+    v = Visualizer(
+        im[:, :, ::-1], MetadataCatalog.get(cfg.DATASETS.TRAIN[0]), scale=1.2)
     out = v.draw_instance_predictions(instances.to("cpu"))
-    cv2.imwrite('static/detect.jpg',out.get_image()[:, :, ::-1])
+    cv2.imwrite('static/detect.jpg', out.get_image()[:, :, ::-1])
 
     response = {
         "scores": scores,
         "pred_classes": pred_classes,
         "pred_class_name": pred_class_name,
         "pred_boxes": pred_boxes,
-        #"classes": classes
+        # "classes": classes
     }
 
     return jsonify(response)
+
+
+@app.route("/test")
+def test_json():
+    response = [{"isEmpty": True, "x1": 0.1, "y1": 0.1, "x2": 0.2, "y2": 0.2}, {"isEmpty": False, "x1": 0.2, "y1": 0.1, "x2": 0.3, "y2": 0.3}, {"isEmpty": True, "x1": 0.3, "y1": 0.2, "x2": 0.4, "y2": 0.4}, {"isEmpty": True, "x1": 0.4, "y1": 0.3, "x2": 0.5, "y2": 0.5}, {"isEmpty": False, "x1": 0.5, "y1": 0.5, "x2": 0.6, "y2": 0.6}, {
+        "isEmpty": False, "x1": 0.7, "y1": 0.1, "x2": 0.8, "y2": 0.2}, {"isEmpty": False, "x1": 0.8, "y1": 0.1, "x2": 0.9, "y2": 0.3}, {"isEmpty": False, "x1": 0.9, "y1": 0.2, "x2": 1.0, "y2": 0.4}, {"isEmpty": True, "x1": 1.0, "y1": 0.3, "x2": 1.0, "y2": 0.5}, {"isEmpty": False, "x1": 1.0, "y1": 0.5, "x2": 1.0, "y2": 0.6}]
+
+    return Response(json.dumps(response), mimetype="application/json", status=200)
 
 
 @app.route("/images")
