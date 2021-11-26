@@ -3,11 +3,9 @@
 from flask import Flask
 from flask_cors import CORS
 from flask import request, jsonify, abort, Response
-from fvcore.common.checkpoint import Checkpointer
 import torch
 from detectron2.data import MetadataCatalog
 from maskrcnn_benchmark.structures.image_list import to_image_list
-from torchvision import transforms as T
 import argparse
 import shutil
 import cv2
@@ -15,7 +13,7 @@ import requests
 import numpy as np
 import threading
 import json
-from constant import CFG_FILE, PI_IP
+from constant import *
 from category import *
 from cocoDemo_func import *
 
@@ -63,10 +61,8 @@ def score_image(predictor, image_url, mode):
 
 
 def prepare_pridctor():
-    model_path = "/Users/sumin/Documents/2021_2_empty/model_final_da.pth"
-
     cfg.merge_from_file(CFG_FILE)
-    cfg.MODEL.WEIGHTS = model_path
+    cfg.MODEL.WEIGHTS = MODEL_PATH
     cfg.MODEL.DEVICE = "cpu"
 
     model = build_detection_model(cfg)
