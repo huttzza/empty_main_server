@@ -7,7 +7,15 @@
 
     [m1 설치 방법](https://velog.io/@huttzza/m1-detectron2-%EC%84%A4%EC%B9%98)
 
-2. flask 설치
+2. maskrcnn_benchmark 설치
+    
+    ```
+    git clone https://github.com/facebookresearch/maskrcnn-benchmark.git
+    cd maskrcnn-benchmark
+    python setup.py build develop
+    ```
+    
+3. flask 설치
 
     ```
     pip install flask
@@ -18,7 +26,8 @@
 1. set constant.py
     ```
     PI_IP = rasberry pi ip
-    CFG_FILE = local cfg path
+    CFG_FILE = local cfg path(.yaml)
+    MODEL_PATH = model path(.pth)
     ```
     (set `static` folder too)
 
