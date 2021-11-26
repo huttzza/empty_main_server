@@ -1,3 +1,5 @@
 __pycache__/*
 constant.py
 static/*
+.DS_Store
+maskrcnn.py
