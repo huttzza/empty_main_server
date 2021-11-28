@@ -14,7 +14,7 @@ from maskrcnn_benchmark import layers as L
 from maskrcnn_benchmark.utils import cv2_util
 
 # custom category
-from category import *
+from lib.category import *
 
 
 class Resize(object):

@@ -8,9 +8,9 @@ import requests
 import numpy as np
 import threading
 import json
-from constant import *
-from category import *
-from predictor import *
+from lib.constant import *
+from lib.category import *
+from lib.predictor import *
 
 app = Flask(__name__)
 CORS(app)

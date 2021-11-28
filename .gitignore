@@ -1,6 +1,10 @@
 __pycache__/*
+*.py[cod]
+
 constant.py
+
 static/*
 !static/pklot.png
 !static/detect.jpg
+
 .DS_Store
