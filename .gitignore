@@ -1,5 +1,6 @@
 __pycache__/*
 constant.py
 static/*
+!static/pklot.png
+!static/detect.jpg
 .DS_Store
-maskrcnn.py

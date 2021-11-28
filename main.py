@@ -1,12 +1,7 @@
-# reference from https://gist.github.com/ylashin/9911cea4a42f8b18f74bafa1952379a5
-
 from flask import Flask
 from flask_cors import CORS
-from flask import request, jsonify, abort, Response
-import torch
-from detectron2.data import MetadataCatalog
-from maskrcnn_benchmark.structures.image_list import to_image_list
-import argparse
+from flask import request, abort, Response
+from maskrcnn_benchmark.config import cfg
 import shutil
 import cv2
 import requests
@@ -15,14 +10,23 @@ import threading
 import json
 from constant import *
 from category import *
-from cocoDemo_func import *
+from predictor import *
 
 app = Flask(__name__)
 CORS(app)
-OPTION = "custom"
 
 
-def score_image(predictor, image_url, mode):
+def initial_setting(cfg_file, model_file, categories):
+    cfg.merge_from_file(cfg_file)
+    cfg.MODEL.WEIGHT = model_file
+    cfg.MODEL.DEVICE = "cpu"
+
+    predictor = Predictor(cfg, categories=categories)
+
+    return predictor
+
+
+def read_image(image_url, mode):
     if mode == 'url':
         image_response = requests.get(image_url)
         image_as_np_array = np.frombuffer(image_response.content, np.uint8)
@@ -34,48 +38,21 @@ def score_image(predictor, image_url, mode):
         abort(405)
 
     image = cv2.imdecode(image_as_np_array, cv2.IMREAD_COLOR)
-    cv2.imwrite('static/image.jpg', image)
 
-    transforms = build_transform()
-    original_image = image.copy()
-    image = transforms(image)
-    image_list = to_image_list(image, cfg.DATALOADER.SIZE_DIVISIBILITY)
-    image_list = image_list.to(cfg.MODEL.DEVICE)
-    with torch.no_grad():
-        predictions = predictor(image_list)
-
-    predictions = [o.to(cfg.MODEL.DEVICE) for o in predictions]
-    result = predictions[0]
-
-    height, width = original_image.shape[:-1]
-    prediction = predictions[0].resize((width, height))
-
-    result_img = original_image.copy()
-    cv2.imwrite('static/original.jpg', original_image)
-    result_img = overlay_boxes(result_img, prediction)
-    result_img = overlay_class_names(result_img, prediction)
-
-    image = result_img
-
-    return image, result
+    return image
 
 
-def prepare_pridctor():
-    cfg.merge_from_file(CFG_FILE)
-    cfg.MODEL.WEIGHTS = MODEL_PATH
-    cfg.MODEL.DEVICE = "cpu"
+def get_label_name(labels, categories):
+    label_name = []
 
-    model = build_detection_model(cfg)
-    model.to(cfg.MODEL.DEVICE)
-    checkpointer = DetectronCheckpointer(cfg, model)
-    _ = checkpointer.load(cfg.MODEL.WEIGHT)
-    classes = MetadataCatalog.get(cfg.DATASETS.TRAIN)
-    model.eval()
-
-    return (model, classes, cfg)
+    for label in labels:
+        if label >= len(categories):
+            abort(405)
+        label_name.append(categories[label])
+    return label_name
 
 
-def get_pklot():
+def get_pklot_from_pi():
     try:
         response = requests.get(PI_IP, stream=True)
         with open('static/parking_lot.jpg', 'wb') as out_file:
@@ -83,46 +60,37 @@ def get_pklot():
         print("parking lot image get from pi-camera")
 
         # get pklot image from pi camera every 5 seconds
-        threading.Timer(30, get_pklot).start()
+        threading.Timer(30, get_pklot_from_pi).start()
     except Exception as e:
         print(e)
 
 
+# -----------------------flask--------------------------
 @ app.route("/predict", methods=["POST"])
 def process_score_image_request():
-    image_url = request.json["imageUrl"]
+    image_path = request.json["imageUrl"]
     mode = request.json["mode"]
-    im, scoring_result = score_image(predictor, image_url, mode)
-    '''
-    instances = scoring_result["instances"]
-    scores = instances.get_fields()["scores"].tolist()
-    pred_classes = instances.get_fields()["pred_classes"].tolist()
-    pred_boxes = instances.get_fields()["pred_boxes"].tensor.tolist()
-    pred_class_name = [classes[i] for i in pred_classes]
+    image = read_image(image_path, mode)
 
-    v = Visualizer(
-        im[:, :, ::-1], MetadataCatalog.get(cfg.DATASETS.TRAIN[0]), scale=1.2)
-    out = v.draw_instance_predictions(instances.to("cpu"))
-    cv2.imwrite('static/detect.jpg', out.get_image()[:, :, ::-1])
+    width, height, _ = image.shape
 
-    response = {
-        "scores": scores,
-        "pred_classes": pred_classes,
-        "pred_class_name": pred_class_name,
-        "pred_boxes": pred_boxes,
-        "classes": classes
-    }
-    '''
-    cv2.imwrite('static/detect.jpg', im)
+    result_img, prediction = predictor.run_on_opencv_image(image)
+
+    cv2.imwrite('static/detect.jpg', result_img)
+    print("successfully predict end")
+
+    scores = prediction.get_field("scores").tolist()
+    labels = prediction.get_field("labels").tolist()
+    labels_name = get_label_name(labels, categories)
+    bbox = prediction.bbox.tolist()
 
     response = {
-        "scores": scoring_result.get_field("scores").tolist(),
-        "labels": scoring_result.get_field("labels").tolist(),
-        "bbox": scoring_result.bbox.tolist()
+        # "scores": scores,
+        # "labels": labels,
+        "labels_name": labels_name,
+        "bbox": bbox
     }
-    # print(scoring_result.fields())
-    # return jsonify(response)
-    # print(response)
+
     return response
 
 
@@ -140,13 +108,11 @@ def show_pklot():
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--model', default="custom")
-    args = parser.parse_args()
+    cfg_file = CFG_FILE
+    model_path = MODEL_PATH
+    categories = CATEGORIES
 
-    OPTION = args.model  # custom or others
+    predictor = initial_setting(cfg_file, model_path, categories)
+    get_pklot_from_pi()
 
-    predictor, classes, cfg = prepare_pridctor()
-    get_pklot()
-
-    app.run(host="0.0.0.0", port=80, debug=True)
+    app.run(host="0.0.0.0", port=4000, debug=True)
