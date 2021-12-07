@@ -4,7 +4,7 @@ __pycache__/*
 constant.py
 
 static/*
-!static/pklot.png
+!static/parking_lot.jpg
 !static/detect.jpg
 
 .DS_Store

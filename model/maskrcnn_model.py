@@ -1,5 +1,5 @@
 from maskrcnn_benchmark.config import cfg
-from lib.predictor import *
+from model.predictor import *
 
 
 class Mskrcnn_model:
@@ -24,4 +24,18 @@ class Mskrcnn_model:
         pred_classes = prediction.get_field("labels").tolist()
         pred_boxes = prediction.bbox.tolist()
 
+        scores, pred_classes, pred_boxes = self._only_car(
+            scores, pred_classes, pred_boxes)
+
         return scores, pred_classes, pred_boxes
+
+    def _only_car(self, scores, pred_classes, pred_boxes):
+        only_scores = []
+        only_pred_classes = []
+        only_pred_boxes = []
+        for i, v in enumerate(pred_classes):
+            if v == 3:  # car
+                only_scores.append(scores[i])
+                only_pred_classes.append(v)
+                only_pred_boxes.append(pred_boxes[i])
+        return only_scores, only_pred_classes, only_pred_boxes

@@ -14,7 +14,7 @@ from maskrcnn_benchmark import layers as L
 from maskrcnn_benchmark.utils import cv2_util
 
 # custom category
-from lib.category import *
+from config.category import *
 
 
 class Resize(object):
@@ -234,8 +234,7 @@ class Predictor(object):
         for box, color in zip(boxes, colors):
             box = box.to(torch.int64)
             top_left, bottom_right = box[:2].tolist(), box[2:].tolist()
-            # bottom_right = [bottom_right[i] + top_left[i]
-            #                 for i, v in enumerate(bottom_right)]  # ADD
+
             image = cv2.rectangle(
                 image, tuple(top_left), tuple(bottom_right), tuple(color), 1
             )
