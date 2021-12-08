@@ -1,6 +1,7 @@
 from cv2 import threshold
 from maskrcnn_benchmark.config import cfg
 from numpy import double, float32, heaviside
+from lib.data_transform import xylist_to_xyxy
 from model.predictor import *
 
 
@@ -15,11 +16,16 @@ class Mskrcnn_model:
         self.cfg = cfg
         self.predictor = Predictor(cfg, categories=categories)
 
+        self.setting_area = []
         #self.threshold = threshold
+
+    def update_setting_area(self, setting_area):
+        self.setting_area = xylist_to_xyxy(setting_area)
 
     def get_predict_reuslt(self, img):
         result_img, prediction = self.predictor.run_on_opencv_image(img)
 
+        img = self.overlay_setting_area(img)
         cv2.imwrite('static/detect.jpg', result_img)
 
         scores = prediction.get_field("scores").tolist()
@@ -62,3 +68,13 @@ class Mskrcnn_model:
         cv2.imwrite('static/detect_only_car.jpg', image)
 
         return only_scores, only_pred_classes, only_pred_boxes
+
+    def overlay_setting_area(self, image):
+        for area in self.setting_area:
+            top_left, bottom_right = area[0], area[1]
+
+            image = cv2.rectangle(
+                image, tuple(top_left), tuple(
+                    bottom_right), (255, 0, 0), 1
+            )
+        return image

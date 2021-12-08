@@ -27,6 +27,19 @@ def xylist_to_center(xyxy_points):
     return xyxy_points
 
 
+def xylist_to_xyxy(xyxy_points):
+    for i, xy in enumerate(xyxy_points):
+        x_list = [point[0] for point in xy]
+        y_list = [point[1] for point in xy]
+
+        x_min, x_max = min(x_list), max(x_list)
+        y_min, y_max = min(y_list), max(y_list)
+
+        xyxy_points[i] = [[x_min, y_min], [x_max, y_max]]
+
+    return xyxy_points
+
+
 def decode_base64(data):
     # base64string -> base64Image
     imageStr = base64.b64decode(data)

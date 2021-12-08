@@ -4,6 +4,8 @@ from detectron2.utils.visualizer import Visualizer
 from detectron2.data import MetadataCatalog
 import cv2
 
+from lib.data_transform import xylist_to_xyxy
+
 
 class Dtctron_model:
     def __init__(self, cfg_file):
@@ -18,7 +20,10 @@ class Dtctron_model:
         self.categories = MetadataCatalog.get(
             cfg.DATASETS.TRAIN[0]).thing_classes
 
-        # return predictor, cfg
+        self.setting_area = []
+
+    def update_setting_area(self, setting_area):
+        self.setting_area = xylist_to_xyxy(setting_area)
 
     def get_predict_reuslt(self, img):
         prediction = self.predictor(img)
@@ -59,3 +64,13 @@ class Dtctron_model:
         cv2.imwrite('static/detect_only_car.jpg', image)
 
         return only_scores, only_pred_classes, only_pred_boxes
+
+    def overlay_setting_area(self, image):
+        for area in self.setting_area:
+            top_left, bottom_right = area[0], area[1]
+
+            image = cv2.rectangle(
+                image, tuple(top_left), tuple(
+                    bottom_right), (255, 0, 0), 1
+            )
+        return image
