@@ -29,7 +29,7 @@ class Dtctron_model:
         pred_boxes = instances.get_fields()["pred_boxes"].tensor.tolist()
 
         scores, pred_classes, pred_boxes = self._only_car(
-            scores, pred_classes, pred_boxes)
+            scores, pred_classes, pred_boxes, img)
 
         v = Visualizer(img[:, :, ::-1],
                        MetadataCatalog.get(self.cfg.DATASETS.TRAIN[0]), scale=1.2)
@@ -38,13 +38,24 @@ class Dtctron_model:
 
         return scores, pred_classes, pred_boxes
 
-    def _only_car(self, scores, pred_classes, pred_boxes):
+    def _only_car(self, scores, pred_classes, pred_boxes, image):
         only_scores = []
         only_pred_classes = []
         only_pred_boxes = []
         for i, v in enumerate(pred_classes):
-            if v == 2:  # car
+            if self.categories[v] == "car":
                 only_scores.append(scores[i])
                 only_pred_classes.append(v)
                 only_pred_boxes.append(pred_boxes[i])
+
+                box = pred_boxes[i]
+                box = [int(i) for i in box]
+                top_left, bottom_right = box[:2], box[2:]
+                image = cv2.rectangle(
+                    image, tuple(top_left), tuple(
+                        bottom_right), (0, 255, 0), 1
+                )
+
+        cv2.imwrite('static/detect_only_car.jpg', image)
+
         return only_scores, only_pred_classes, only_pred_boxes

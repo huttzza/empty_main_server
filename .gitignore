@@ -6,5 +6,6 @@ constant.py
 static/*
 !static/parking_lot.*
 !static/detect.jpg
+!static/detect_only_car.*
 
 .DS_Store

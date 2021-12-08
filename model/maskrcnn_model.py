@@ -1,4 +1,6 @@
+from cv2 import threshold
 from maskrcnn_benchmark.config import cfg
+from numpy import double, float32, heaviside
 from model.predictor import *
 
 
@@ -13,7 +15,7 @@ class Mskrcnn_model:
         self.cfg = cfg
         self.predictor = Predictor(cfg, categories=categories)
 
-        # return predictor, cfg
+        #self.threshold = threshold
 
     def get_predict_reuslt(self, img):
         result_img, prediction = self.predictor.run_on_opencv_image(img)
@@ -25,17 +27,38 @@ class Mskrcnn_model:
         pred_boxes = prediction.bbox.tolist()
 
         scores, pred_classes, pred_boxes = self._only_car(
-            scores, pred_classes, pred_boxes)
+            scores, pred_classes, pred_boxes, img)
 
         return scores, pred_classes, pred_boxes
 
-    def _only_car(self, scores, pred_classes, pred_boxes):
+    def _only_car(self, scores, pred_classes, pred_boxes, image):
         only_scores = []
         only_pred_classes = []
         only_pred_boxes = []
+
+        # img_width, img_height, _ = image.shape
+        # image_area = img_width * img_height
+
         for i, v in enumerate(pred_classes):
-            if v == 3:  # car
+            box = pred_boxes[i]
+            box = [int(i) for i in box]
+            top_left, bottom_right = box[:2], box[2:]
+
+            # width = abs(top_left[0] - bottom_right[0])
+            # height = abs(top_left[1] - bottom_right[1])
+            # box_area = width * height
+
+            # if box_area > self.threshold * image_area and
+            if self.categories[v] == "car":
                 only_scores.append(scores[i])
                 only_pred_classes.append(v)
                 only_pred_boxes.append(pred_boxes[i])
+
+                image = cv2.rectangle(
+                    image, tuple(top_left), tuple(
+                        bottom_right), (0, 255, 0), 1
+                )
+
+        cv2.imwrite('static/detect_only_car.jpg', image)
+
         return only_scores, only_pred_classes, only_pred_boxes
