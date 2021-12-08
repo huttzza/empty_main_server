@@ -1,7 +1,7 @@
 __pycache__/*
 *.py[cod]
 
-constant.py
+constant_pi_ip.py
 
 static/*
 !static/parking_lot.*
