@@ -7,7 +7,7 @@ def xyxy_to_xylist(xyxy_points):
     # top left xy / bottom right xy
     for i, xyxy in enumerate(xyxy_points):
         x1, y1, x2, y2 = map(int, xyxy)
-        xylist = [[x1, y1], [x2, y1], [x2, y1], [x2, y2]]
+        xylist = [[x1, y1], [x2, y1], [x2, y2], [x1, y2]]
         xyxy_points[i] = xylist
     return xyxy_points
 

@@ -126,7 +126,7 @@ def detect_and_cal_iou(setting_area):
         print("is_full updated")
 
     capture.release()
-    cv2.destroyAllWindows()
+    # cv2.destroyAllWindows()
     print("video detection finished")
 
 # -----------------------flask--------------------------
@@ -158,7 +158,8 @@ def pi_image_for_first_setting():
 def set_and_run():
     global table
     table = request.json["table"]
-    xyxy_points = request.json["setting_area"]
+    print(table)
+    xyxy_points = request.json["pred_boxes"]
     print(str(len(xyxy_points)) + " setting area")
 
     predictor.update_setting_area(copy.deepcopy(xyxy_points))
